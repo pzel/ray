@@ -6,7 +6,7 @@ module Level (
  ,(!)
  ,(!#)
  ,mkLevel
- ,mkSquareLevel 
+ ,parseLevel
  ) where
 
 import Globals (blockSize)
@@ -22,10 +22,14 @@ type GridCoord = Int
 mkLevel :: [[Block]] -> Level
 mkLevel = Level
 
-mkSquareLevel :: Int -> Level
-mkSquareLevel s = Level [ replicate s Wall, 
-                          ([Wall]++(replicate (s-2) Empty)++[Wall]),
-                          replicate s Wall ]
+parseLevel :: String -> Level
+parseLevel = Level . map (map transform) . lines
+  where 
+    transform :: Char -> Block
+    transform ' ' = Empty
+    transform '.' = Empty
+    transform '#' = Wall
+    transform   _ = Wall
 
 infixl 9 ! 
 infixl 9 !#

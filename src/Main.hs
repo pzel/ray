@@ -1,5 +1,6 @@
 module Main where
 
+import Control.Applicative
 import Control.Monad (zipWithM)
 import Data.Angle
 import Data.Maybe (isJust,fromJust)
@@ -13,27 +14,7 @@ main = do
   SDL.enableKeyRepeat 1 1
   SDL.setVideoMode G.screenWidth G.screenHeight 8 []
   screen <- SDL.getVideoSurface
-  let level = mkLevel [[Wall, Wall, Wall,Wall],
-                       [Wall,Empty,Empty,Wall],
-                       [Wall,Empty,Empty,Wall],
-                       [Wall,Empty,Empty,Wall],
-                       [Wall,Empty,Empty,Wall],
-                       [Wall,Empty,Empty,Wall],
-                       [Wall,Empty,Empty,Wall],
-                       [Wall,Empty,Empty,Wall],
-                       [Wall,Empty,Empty,Wall],
-                       [Wall,Empty,Empty,Wall],
-                       [Wall,Empty,Empty,Wall],
-                       [Wall,Empty,Empty,Wall],
-                       [Wall,Empty,Empty,Wall],
-                       [Wall,Empty,Empty,Empty,Wall, Wall, Wall, Wall],
-                       [Wall,Empty,Empty,Empty,Empty,Empty,Empty,Wall],
-                       [Wall,Empty,Empty,Empty,Empty,Empty,Empty,Wall],
-                       [Wall,Empty,Empty,Empty,Empty,Empty,Empty,Wall],
-                       [Wall,Empty,Empty,Empty,Wall, Wall, Wall, Wall],
-                       [Wall,Empty,Empty,Wall],
-                       [Wall,Empty,Empty,Wall],
-                       [Wall, Wall, Wall,Wall]] 
+  level <- parseLevel <$> readFile "data/l0.lev" 
   mainLoop screen level (65,65) 45
   SDL.quit
  where
@@ -43,10 +24,10 @@ main = do
    e <- SDL.pollEvent
    case e of
     (KeyDown (Keysym SDLK_q _ _))    -> return ()
-    (KeyDown (Keysym SDLK_UP _ _)) -> mainLoop s l (moveByAngle 7 l p a) a
-    (KeyDown (Keysym SDLK_DOWN _ _)) -> mainLoop s l (moveByAngle 7 l p (deg(a+180.0))) a
-    (KeyDown (Keysym SDLK_LEFT _ _)) -> mainLoop s l p (deg (a-3.0))
-    (KeyDown (Keysym SDLK_RIGHT _ _)) -> mainLoop s l p (deg (a+3.0))
+    (KeyDown (Keysym SDLK_UP _ _)) -> mainLoop s l (moveByAngle 4 l p a) a
+    (KeyDown (Keysym SDLK_DOWN _ _)) -> mainLoop s l (moveByAngle 4 l p (deg(a+180.0))) a
+    (KeyDown (Keysym SDLK_LEFT _ _)) -> mainLoop s l p (deg (a-2.0))
+    (KeyDown (Keysym SDLK_RIGHT _ _)) -> mainLoop s l p (deg (a+2.0))
     _                              -> mainLoop s l p a
 
 drawLevel :: Surface -> Level -> LevelPos -> Angle -> IO Bool
@@ -66,8 +47,7 @@ castRays s l lp facing =
    return ()
 
 correct :: Angle -> Angle -> Float -> Float
-correct facing ray dist = dist * (cos' (deg (ray - facing)))
-
+correct facing ray dist = max 1 (dist * (cos' (deg (ray - facing))))
 
 projection :: Float -> Int -> IO (Maybe Rect)
 projection  d col =
