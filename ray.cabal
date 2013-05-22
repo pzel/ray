@@ -8,7 +8,7 @@ cabal-version:       >=1.8
 
 executable ray
   main-is:             Main.hs
-  ghc-options:         -Wall
+  ghc-options:         -W
   hs-source-dirs:      src
   build-depends:       base ==4.6.*
                       ,SDL ==0.6.4
