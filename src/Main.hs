@@ -13,7 +13,10 @@ main = do
   SDL.enableKeyRepeat 1 1
   SDL.setVideoMode G.screenWidth G.screenHeight 8 []
   screen <- SDL.getVideoSurface
-  let level = mkSquareLevel 17
+  let level = mkLevel [[Wall,Wall,Wall,Wall],
+                       [Wall,Empty,Empty,Wall],
+                       [Wall,Empty,Empty,Wall],
+                       [Wall,Wall,Wall,Wall]] -- mkSquareLevel 17
   mainLoop screen level (65,65) 280
   SDL.quit
  where
@@ -23,7 +26,8 @@ main = do
    e <- SDL.pollEvent
    case e of
     (KeyDown (Keysym SDLK_q _ _))    -> return ()
---    (KeyDown (Keysym SDLK_UP _ _)) -> mainLoop s l (px,py+8) (deg (a-1.0))
+    (KeyDown (Keysym SDLK_UP _ _)) -> mainLoop s l (moveByAngle l p a) a
+    (KeyDown (Keysym SDLK_DOWN _ _)) -> mainLoop s l (moveByAngle l p (deg(a+180.0))) a
     (KeyDown (Keysym SDLK_LEFT _ _)) -> mainLoop s l p (deg (a-3.0))
     (KeyDown (Keysym SDLK_RIGHT _ _)) -> mainLoop s l p (deg (a+3.0))
     _                              -> mainLoop s l p a
@@ -38,7 +42,7 @@ castRays :: Surface -> Level -> LevelPos -> Angle -> IO ()
 castRays s l lp facing =
  do
    let angles = take G.pPlaneW $ iterate (\a->deg(G.pPlaneColWidth+a)) (facing - G.halfFov)
-   distances <- mapM (castRay l lp lp) angles -- unfishbowlize
+       distances = map (castRay l lp lp) angles -- unfishbowlize
    rects <- zipWithM projection distances [0..]
    mapM_ (\r-> SDL.fillRect s r (Pixel 12566463)) rects
    return ()
@@ -49,21 +53,22 @@ projection d col =
       top = max 0 $ (G.pPlaneH `div` 2) - (height `div` 2)
   in return $ Just $ Rect col top 1 (height)
 
-castRay :: Level -> LevelPos -> LevelPos -> Angle -> IO Float
-castRay l p@(px,py) c@(cx,cy) a =
+castRay :: Level -> LevelPos -> LevelPos -> Angle -> Float
+castRay l p@(px,py) c@(cx,cy) a = 
+  if newC == c
+  then getDistance p c
+  else castRay l p newC a
+ where newC = moveByAngle l c a 
+
+moveByAngle :: Level -> LevelPos -> Angle -> LevelPos
+moveByAngle l p@(px,py) a = 
   let dx = (cos' a) * 3
       dy = (sin' a) * 3
-      md = checkWall l p c
-  in do 
-      if isJust md
-         then return (fromJust md)
-         else castRay l p (cx+dx, cy+dy) a
+      newP = (px+dx,py+dy)
+  in if (isWall l newP) then p else newP
 
-checkWall :: Level -> LevelPos -> LevelPos -> Maybe Float
-checkWall l p cu@(checkX,checkY) =
-    case l!cu of
-      Wall  -> Just $ getDistance p cu
-      Empty -> Nothing
+isWall :: Level -> LevelPos -> Bool
+isWall l p = l!p == Wall
 
 getDistance (x1,y1) (x2,y2) = sqrt (((x1-x2)^^2) + ((y1-y2)^^2))
 
