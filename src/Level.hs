@@ -6,6 +6,7 @@ module Level (
  ,(!)
  ,(!#)
  ,mkLevel
+ ,mkSquareLevel 
  ) where
 
 import Globals (blockSize)
@@ -21,14 +22,22 @@ type GridCoord = Int
 mkLevel :: [[Block]] -> Level
 mkLevel = Level
 
+mkSquareLevel :: Int -> Level
+mkSquareLevel s = Level [ replicate s Wall, 
+                          ([Wall]++(replicate (s-2) Empty)++[Wall]),
+                          replicate s Wall ]
+
 infixl 9 ! 
 infixl 9 !#
 
-(!) :: Level -> LevelPos -> Block
-(Level l)!(xf,yf) = let x = (floor xf) `div` blockSize
-                        y = (floor yf) `div` blockSize
+(!) :: Level -> LevelPos -> Maybe Block
+(Level l)!(xf,yf) = let x = (round xf) `div` blockSize
+                        y = (round yf) `div` blockSize
                     in if (min x y) >= 0 && y < length l && x < length (l!!y)
-                       then (l!!y)!!x
-                       else Wall
-(!#) :: Level -> LevelGPos -> Maybe Block
-(!#) = undefined
+                       then Just $ (l!!y)!!x
+                       else Nothing
+
+(!#) :: Level -> LevelGPos -> Block
+(Level l)!#(x,y) = if (min x y) >= 0 && y < length l && x < length (l!!y)
+                   then (l!!y)!!x
+                   else Wall

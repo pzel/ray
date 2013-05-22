@@ -1,6 +1,5 @@
 module Globals (
-  alpha     
- ,blockSize
+  blockSize
  ,playerHeight
  ,fov ,halfFov
  ,pPlaneDist,pPlaneH,pPlaneW,pPlaneCenter,pPlaneColWidth
@@ -10,9 +9,6 @@ module Globals (
 
 import Data.Angle
 import Data.Word (Word32)
-
-alpha :: Float
-alpha = 60.0
 
 blockSize :: Int
 blockSize = 64
@@ -28,6 +24,7 @@ halfFov = deg $ fov / 2.0
 
 pPlaneDist, pPlaneH, pPlaneW :: Int
 pPlaneDist = round $ fromIntegral (fst pPlaneCenter) / tan(toRadians(fov/2.0))
+
 pPlaneH = screenHeight
 pPlaneW = screenWidth
 
