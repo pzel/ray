@@ -2,6 +2,7 @@ module Main where
 
 import Control.Monad (zipWithM)
 import Data.Angle
+import Data.Maybe (isJust,fromJust)
 import qualified Globals as G
 import Graphics.UI.SDL as SDL hiding (flip)
 import Level
@@ -37,7 +38,7 @@ castRays :: Surface -> Level -> LevelPos -> Angle -> IO ()
 castRays s l lp facing =
  do
    let angles = take G.pPlaneW $ iterate (\a->deg(G.pPlaneColWidth+a)) (facing - G.halfFov)
-       distances = map (castRay l lp) angles -- unfishbowlize
+   distances <- mapM (castRay l lp lp) angles -- unfishbowlize
    rects <- zipWithM projection distances [0..]
    mapM_ (\r-> SDL.fillRect s r (Pixel 12566463)) rects
    return ()
@@ -46,45 +47,25 @@ projection :: Float -> Int -> IO (Maybe Rect)
 projection d col =
   let height = (round $ (fromIntegral G.blockSize / d) * 277)::Int
       top = max 0 $ (G.pPlaneH `div` 2) - (height `div` 2)
-  in do putStrLn (show ("col",col,"dist",d,"height",height,"top",top))
-        return $ Just $ Rect col top 1 (height)
+  in return $ Just $ Rect col top 1 (height)
 
-castRay :: Level -> LevelPos -> Angle -> Float
-castRay l p a  = let hdist = findHIntersection l p a
-                     vdist = findVIntersection l p a
-                 in min vdist hdist
+castRay :: Level -> LevelPos -> LevelPos -> Angle -> IO Float
+castRay l p@(px,py) c@(cx,cy) a =
+  let dx = (cos' a) * 3
+      dy = (sin' a) * 3
+      md = checkWall l p c
+  in do 
+      if isJust md
+         then return (fromJust md)
+         else castRay l p (cx+dx, cy+dy) a
 
-toGrid :: LevelPos -> LevelGPos
-toGrid (x,y) = (floor(x/64), floor(y/64))
+checkWall :: Level -> LevelPos -> LevelPos -> Maybe Float
+checkWall l p cu@(checkX,checkY) =
+    case l!cu of
+      Wall  -> Just $ getDistance p cu
+      Empty -> Nothing
 
-findHIntersection, findVIntersection :: Level -> LevelPos -> Angle -> Float
-findHIntersection l p@(px,py) a =
-  let bSize = (fromIntegral G.blockSize)::Float
-      cy = (py/bSize) * bSize + (if upP a then (-1.0) else bSize)
-      cx = px + (py-cy)/tan a
-      ya = if upP a then (-bSize) else bSize
-      xa = bSize/tan a
-      checkUnit = (cx,cy)
-      checkGrid = toGrid checkUnit
-  in checkWall l p checkUnit checkGrid (xa,ya) a
+getDistance (x1,y1) (x2,y2) = sqrt (((x1-x2)^^2) + ((y1-y2)^^2))
 
-findVIntersection l p@(px,py) a =
-  let bSize = (fromIntegral G.blockSize)::Float
-      cx = (px/bSize) * bSize + (if rightP a then bSize else (-1.0))
-      cy = py + (px-cx)*tan a
-      xa = if rightP a then bSize else (-bSize)
-      ya = bSize*tan a
-      checkUnit = (cx,cy)
-      checkGrid = toGrid checkUnit
-  in checkWall l p checkUnit checkGrid (xa,ya) a
-
-checkWall :: Level -> LevelPos -> LevelPos -> LevelGPos -> (Float,Float) -> Angle -> Float
-checkWall l p@(px,_) cu@(checkX,checkY) cg a@(xa,ya) ang =
-  case l!#cg of 
-    Wall  -> getTrigDist px checkX ang
-    Empty -> checkWall l p (checkX+xa, checkY+ya) (toGrid (checkX+xa, checkY+ya)) a ang
-
-getTrigDist :: Float -> Float -> Angle -> Float 
-getTrigDist x1 x2 a = abs(x1-x2) / cos a
-
----getDistfance (x1,y1) (x2,y2) = sqrt $ (x1-x2)^2 + (y1-y2)^2
+cos' = cos . toRadians
+sin' = sin . toRadians

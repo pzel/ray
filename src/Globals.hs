@@ -38,8 +38,5 @@ screenHeight, screenWidth :: Int
 screenHeight = 200
 screenWidth = 320
 
-toRadians :: Float -> Float
-toRadians x = x/180*pi
-
 word32Max :: Word32
 word32Max = (maxBound :: Word32)

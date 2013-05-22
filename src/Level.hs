@@ -30,12 +30,12 @@ mkSquareLevel s = Level [ replicate s Wall,
 infixl 9 ! 
 infixl 9 !#
 
-(!) :: Level -> LevelPos -> Maybe Block
+(!) :: Level -> LevelPos -> Block
 (Level l)!(xf,yf) = let x = (round xf) `div` blockSize
                         y = (round yf) `div` blockSize
                     in if (min x y) >= 0 && y < length l && x < length (l!!y)
-                       then Just $ (l!!y)!!x
-                       else Nothing
+                       then (l!!y)!!x
+                       else Wall
 
 (!#) :: Level -> LevelGPos -> Block
 (Level l)!#(x,y) = if (min x y) >= 0 && y < length l && x < length (l!!y)
