@@ -10,5 +10,5 @@ executable ray
   main-is:             Main.hs
   ghc-options:         -W
   hs-source-dirs:      src
-  build-depends:       base ==4.6.*
-                      ,SDL ==0.6.4
+  build-depends:       base == 4.*
+                      ,SDL == 0.*

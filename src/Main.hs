@@ -3,7 +3,6 @@ module Main where
 import Control.Applicative
 import Control.Monad (zipWithM)
 import Data.Angle
-import Data.Maybe (isJust,fromJust)
 import qualified Globals as G
 import Graphics.UI.SDL as SDL hiding (flip)
 import Level
@@ -14,7 +13,7 @@ main = do
   SDL.enableKeyRepeat 1 1
   SDL.setVideoMode G.screenWidth G.screenHeight 8 []
   screen <- SDL.getVideoSurface
-  level <- parseLevel <$> readFile "data/l0.lev" 
+  level <- parseLevel <$> readFile "data/l0.lev"
   mainLoop screen level (65,65) 45
   SDL.quit
  where
@@ -42,28 +41,28 @@ castRays s l lp facing =
    let angles = take G.pPlaneW $ iterate (\a->deg(G.pPlaneColWidth+a)) (facing - G.halfFov)
        distances = map (castRay l lp lp) angles
        correctedDistances = (zipWith (correct facing) angles distances)
-   rects <- zipWithM projection correctedDistances [0..]
-   mapM_ (\r-> SDL.fillRect s r (Pixel 12566463)) rects
+       rects = zipWith projection correctedDistances [0..]
+   mapM_ (\r-> SDL.fillRect s (Just r) (Pixel 12566463)) rects
    return ()
 
 correct :: Angle -> Angle -> Float -> Float
 correct facing ray dist = max 1 (dist * (cos' (deg (ray - facing))))
 
-projection :: Float -> Int -> IO (Maybe Rect)
+projection :: Float -> Int -> Rect
 projection  d col =
   let height = (round $ (fromIntegral G.blockSize / d) * 277)::Int
       top = max 0 $ (G.pPlaneH `div` 2) - (height `div` 2)
-  in return $ Just $ Rect col top 1 (height)
+  in Rect col top 1 (height)
 
 castRay :: Level -> LevelPos -> LevelPos -> Angle -> Float
-castRay l p@(px,py) c@(cx,cy) a = 
+castRay l p@(px,py) c@(cx,cy) a =
   if newC == c
   then getDistance p c
   else castRay l p newC a
- where newC = moveByAngle 4 l c a 
+ where newC = moveByAngle 4 l c a
 
 moveByAngle :: Float -> Level -> LevelPos -> Angle -> LevelPos
-moveByAngle s l p@(px,py) a = 
+moveByAngle s l p@(px,py) a =
   let dx = (cos' a) * s
       dy = (sin' a) * s
       newP = (px+dx,py+dy)
