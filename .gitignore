@@ -7,4 +7,4 @@ cabal.sandbox.config
 *.hi
 *.chi
 *.chs.h
-.virthualenv
+.stack-work
